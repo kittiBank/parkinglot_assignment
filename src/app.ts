@@ -1,14 +1,14 @@
 import express from 'express';
-import dotenv from 'dotenv';
-
-dotenv.config();
+import parkingLotRoutes from './routes/parkingLotRoutes'
+//import parkingLotRouter from './routes/parkingLotRoutes';
 
 const app = express();
 
-app.use(express.json());
+// Middleware
+app.use(express.json());          // รับ JSON body
 
-app.get('/', (req, res) => {
-  res.send('API is running');
-});
+// Routes
+//app.get('/', (req, res) => {res.send('API is running');});
+app.use('/parking-lots', parkingLotRoutes);
 
 export default app;
