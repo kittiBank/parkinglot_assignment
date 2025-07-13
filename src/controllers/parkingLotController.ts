@@ -2,56 +2,53 @@ import { Request, Response } from 'express';
 import { pool } from '../config/db';
 
 export const createParkingLot = async (req: Request, res: Response) => {
+
     try {
         const { capacity } = req.body;
 
         const isInteger = Number.isInteger(capacity);
-        const isUnderLimit = capacity <= 10;
+        const isUnderLimit = capacity > 0 && capacity <= 20;
 
         if (!isInteger || !isUnderLimit) {
-            return res.status(400).json({ message: 'Invalid capacity: Must be integer and less than 10' })
+            return res.status(400).json({ message: 'Invalid capacity: Must be integer and less than 20' })
         }
 
+        //DB Transaction
+        const conn = await pool.getConnection();
         try {
-            const conn = await pool.getConnection();
-            try {
-                await conn.beginTransaction();
+            await conn.beginTransaction();
 
-                const [existingRows] = await conn.query('SELECT COUNT(*) as count FROM parking_lots');
-                const rowExistingCount = (existingRows as any)[0].count;
+            const [existingRows] = await conn.query('SELECT COUNT(*) as count FROM parking_lots');
+            const rowExistingCount = (existingRows as any)[0].count;
 
-                //Check slots is already exits before insert
-                if (rowExistingCount > 0) {
-                    await conn.rollback();
-                    return res.json({ message: 'Parking lot slots already exits.' });
-                }
-
-                //Prepare data before insert
-                const values: (number | boolean)[][] = Array.from(
-                    { length: capacity },
-                    (_, i) => [i + 1, false]
-                );
-
-                //Bulk insert parking slot with capacity
-                const sql = 'INSERT INTO parking_lots (slot_id, is_reserved) VALUES ?';
-                await conn.query(sql, [values]);
-
-                await conn.commit();
-                return res.status(200).json({
-                    message: `Generate parking lot ${capacity} slots success`
-                });
-            } catch (err) {
+            if (rowExistingCount > 0) {
                 await conn.rollback();
-                throw err;
-            } finally {
-                conn.release();
+                return res.status(409).json({ message: 'Parking lot slots already exist.' });
             }
+
+            //Prepare data before insert
+            const values: (string | boolean)[][] = Array.from(
+                { length: capacity },
+                (_, i) => [String(i + 1).padStart(3, '0'), false]
+            );
+
+            //Bulk insert parking slot with capacity
+            const sql = 'INSERT INTO parking_lots (slot_id, is_reserved) VALUES ?';
+            await conn.query(sql, [values]);
+            await conn.commit();
+
+            return res.status(201).json({
+                message: `Generate parking lot ${capacity} slots success`
+            });
         } catch (error: any) {
-            return res.status(500).json({ message: error.message });
+            await conn.rollback();
+            return res.status(500).json({ message: 'Internal error' });
+        } finally {
+            conn.release();
         }
 
     } catch (error: any) {
-        return res.status(500).json({ message: error.message });
+        return res.status(500).json({ message: 'Internal error' });
     }
 
 };

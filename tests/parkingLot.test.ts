@@ -25,6 +25,7 @@ describe('POST /parking-lots-duplicate-slots', () => {
             .post('/parking-lots')
             .send({ capacity: 10 });
 
+        expect(res.statusCode).toBe(409);
         expect(res.body).toMatchObject({
             message: expect.stringMatching(/already exist/i),
         });
