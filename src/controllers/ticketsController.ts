@@ -16,9 +16,9 @@ export const createTicket = async (req: Request, res: Response) => {
         }
 
         //DB Transaction
-        try {
+        const conn = await pool.getConnection();
 
-            const conn = await pool.getConnection();
+        try {
             await conn.beginTransaction();
 
             //Find nearest slot
@@ -46,8 +46,6 @@ export const createTicket = async (req: Request, res: Response) => {
             );
 
             await conn.commit();
-            conn.release();
-
             return res.status(201).json({
                 ticket_id: ticketResult.insertId,
                 slot_id,
@@ -57,8 +55,11 @@ export const createTicket = async (req: Request, res: Response) => {
             });
 
         } catch (err) {
+            if (conn) await conn.rollback();
             console.error(err);
             return res.status(500).json({ message: 'Internal server error' });
+        } finally {
+            if (conn) conn.release();
         }
 
     } catch (error) {
@@ -67,10 +68,57 @@ export const createTicket = async (req: Request, res: Response) => {
 
 }
 
-/** PATCH /tickets/:ticketId */
 export const leaveTicket = async (req: Request, res: Response) => {
-    // body: { leaveDate }
-    return res.status(501).json({ message: 'Not implemented leaveTicket' });
+    try {
+        const { slot_id } = req.body;
+
+        if (!slot_id || slot_id.trim() === '') {
+            return res.status(400).json({ status: 400, message: 'Slot is required' });
+        }
+
+        //DB Transaction
+        const conn = await pool.getConnection();
+
+        try {
+            await conn.beginTransaction();
+
+            //Check slot_id in parking lots
+            const [rows] = await conn.query(
+                `SELECT id FROM tickets WHERE slot_id = ? AND active = 1 LIMIT 1`,
+                [slot_id]
+            );
+
+            if ((rows as any[]).length === 0) {
+                return res.status(404).json({ status: 404, message: `Not found slot number ${slot_id}` });
+            }
+
+            //Update partking slot to avaiable
+            await conn.query(
+                `UPDATE parking_lots SET is_reserved = 0, modified_at = NOW() WHERE id = ?`,
+                [slot_id]
+            );
+
+            //Update ticket to leave
+            await conn.query(
+                `UPDATE tickets SET active = 0, leave_at = NOW() WHERE slot_id = ? AND active = 1`,
+                [slot_id]
+            );
+
+            await conn.commit();
+            return res.status(200).json({ status: 200, message: `Slot ${slot_id} is available` });
+
+        } catch (error) {
+            if (conn) await conn.rollback();
+            console.error(error);
+            return res.status(500).json({ message: 'Internal server error' });
+        } finally {
+            if (conn) conn.release();
+        }
+
+    } catch (error) {
+        return res.status(500).json({ message: 'Internal error' });
+    }
+
 }
 
 /** GET /tickets */
