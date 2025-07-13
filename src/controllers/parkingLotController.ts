@@ -53,4 +53,20 @@ export const createParkingLot = async (req: Request, res: Response) => {
 
 };
 
+/** DELETE /parking-lots */
+export const deleteAllParkingLots = async (req: Request, res: Response) => {
+    return res.status(501).json({ message: 'Not implemented deleteAllParkingLots' });
+}
+
+/** GET /parking-lots */
+export const getParkingLots = async (req: Request, res: Response) => {
+    // supports optional query: ?carSizeId=S&status=occupied
+    return res.status(501).json({ message: 'Not implemented getParkingLots' });
+}
+
+/** GET /parking-lots/:slotId */
+export const getParkingLotById = async (req: Request, res: Response) => {
+    return res.status(501).json({ message: 'Not implemented getParkingLotById' });
+}
+
 
