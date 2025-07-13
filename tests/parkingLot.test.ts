@@ -32,3 +32,14 @@ describe('POST /parking-lots-duplicate-slots', () => {
     });
 });
 
+describe('GET /parking-lots-all-slot', () => {
+    it('should reject duplicate generate slots', async () => {
+        const res = await request(app)
+            .get('/parking-lots')
+
+        expect(res.statusCode).toBe(200);
+    });
+});
+
+
+

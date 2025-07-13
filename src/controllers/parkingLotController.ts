@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { pool } from '../config/db';
 
+//To generate slot in parking lots
 export const createParkingLot = async (req: Request, res: Response) => {
 
     try {
@@ -53,20 +54,52 @@ export const createParkingLot = async (req: Request, res: Response) => {
 
 };
 
-/** DELETE /parking-lots */
-export const deleteAllParkingLots = async (req: Request, res: Response) => {
-    return res.status(501).json({ message: 'Not implemented deleteAllParkingLots' });
-}
-
-/** GET /parking-lots */
+//To view all slot with status in partking lots
 export const getParkingLots = async (req: Request, res: Response) => {
-    // supports optional query: ?carSizeId=S&status=occupied
-    return res.status(501).json({ message: 'Not implemented getParkingLots' });
+    try {
+        const [rows] = await pool.query(
+            `SELECT pl.slot_id, 
+            (CASE WHEN pl.is_reserved = 0 THEN 'Free' ELSE 'Reserved' END) AS status,
+            tk.plate_number,
+            cz.description AS car_size,
+			tk.created_at
+            FROM parking_lots AS pl
+            LEFT JOIN tickets AS tk ON tk.slot_id = pl.slot_id AND tk.active = 1
+            LEFT JOIN car_size AS cz ON cz.code = tk.car_size_code
+            ORDER BY pl.slot_id;`);
+
+        return res.json({ data: rows });
+
+    } catch (error) {
+        return res.status(500).json({ message: 'Internal error' });
+    }
+
 }
 
-/** GET /parking-lots/:slotId */
+//To view all slot with status in partking lots by slot_id
 export const getParkingLotById = async (req: Request, res: Response) => {
-    return res.status(501).json({ message: 'Not implemented getParkingLotById' });
+
+    const { slot_id } = req.params;
+
+    try {
+        const [rows] = await pool.query(
+            `SELECT pl.slot_id, 
+            (CASE WHEN pl.is_reserved = 0 THEN 'Free' ELSE 'Reserved' END) AS status,
+            tk.plate_number,
+            cz.description AS car_size,
+			tk.created_at
+            FROM parking_lots AS pl
+            LEFT JOIN tickets AS tk ON tk.slot_id = pl.slot_id AND tk.active = 1
+            LEFT JOIN car_size AS cz ON cz.code = tk.car_size_code
+            WHERE pl.slot_id = ?
+            ORDER BY pl.slot_id LIMIT 1;`, [slot_id]);
+
+        return res.json({ data: rows });
+
+    } catch (error) {
+        return res.status(500).json({ message: 'Internal error' });
+    }
+
 }
 
 

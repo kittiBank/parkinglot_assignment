@@ -3,6 +3,7 @@ import { pool } from '../config/db';
 import { RowDataPacket } from 'mysql2/promise';
 import { ResultSetHeader } from 'mysql2/promise';
 
+//To create new ticket with plate number and car size
 export const createTicket = async (req: Request, res: Response) => {
     try {
         const { plate_number, car_size } = req.body;
@@ -68,9 +69,10 @@ export const createTicket = async (req: Request, res: Response) => {
 
 }
 
+//To leave ticket
 export const leaveTicket = async (req: Request, res: Response) => {
     try {
-        const { slot_id } = req.body;
+        const { slot_id } = req.params;
 
         if (!slot_id || slot_id.trim() === '') {
             return res.status(400).json({ status: 400, message: 'Slot is required' });
@@ -94,7 +96,7 @@ export const leaveTicket = async (req: Request, res: Response) => {
 
             //Update partking slot to avaiable
             await conn.query(
-                `UPDATE parking_lots SET is_reserved = 0, modified_at = NOW() WHERE id = ?`,
+                `UPDATE parking_lots SET is_reserved = 0, modified_at = NOW() WHERE slot_id = ?`,
                 [slot_id]
             );
 
@@ -121,8 +123,44 @@ export const leaveTicket = async (req: Request, res: Response) => {
 
 }
 
-/** GET /tickets */
-export const getTickets = async (req: Request, res: Response) => {
-    // query: ?carSizeId=S&active=true
-    return res.status(501).json({ message: 'Not implemented getTickets' });
+//To view all slot by car size
+export const getSlotsByCarSize = async (req: Request, res: Response) => {
+    const { car_size } = req.params;
+
+    try {
+        const [rows] = await pool.query(
+            `SELECT tk.slot_id, cz.description AS car_size
+            FROM tickets tk
+            INNER JOIN car_size cz ON cz.code = tk.car_size_code
+            WHERE tk.active = 1 AND cz.code = ? 
+            ORDER BY tk.slot_id;`,
+            [car_size.trim().toLowerCase()]
+        );
+
+        return res.json({ data: rows });
+
+    } catch (error) {
+        return res.status(500).json({ message: 'Internal error' });
+    }
 }
+
+//To view all plat number by car size
+export const getPlatesByCarSize = async (req: Request, res: Response) => {
+
+    const { car_size } = req.params;
+
+    try {
+        const [rows] = await pool.query(
+            `SELECT tk.plate_number, tk.slot_id, cz.description AS car_size
+            FROM tickets tk
+            INNER JOIN car_size cz ON cz.code = tk.car_size_code
+            WHERE tk.active = 1 AND cz.code = ? ORDER BY tk.plate_number;`,
+            [car_size.trim().toLowerCase()]
+        );
+
+        return res.json({ data: rows });
+
+    } catch (error) {
+        return res.status(500).json({ message: 'Internal error' });
+    }
+};

@@ -28,3 +28,43 @@ describe('POST /tickets-createTicket', () => {
     });
 
 });
+
+describe('PATCH /tickets-leave', () => {
+    it('should return 400 when missing slot_id', async () => {
+        const res = await request(app).patch('/tickets/1').send({
+            slot_id: '',
+        });
+        expect(res.status).toBe(400);
+        expect(res.body.message).toMatch(/Slot is required/i);
+    });
+
+    it('should return 200 when leave ticket success', async () => {
+        const res = await request(app).patch('/tickets/1').send({
+            slot_id: '001',
+        });
+        expect(res.status).toBe(200);
+        expect(res.body.message).toMatch(/is available/i);
+    });
+
+});
+
+describe('GET /getParkingLots-all-status', () => {
+    it('should return 200 when need to view all slot', async () => {
+        const res = await request(app).get('/parking-lots');
+        expect(res.status).toBe(200);
+    });
+});
+
+describe('GET /getSlotsByCarSize', () => {
+    it('should return 200 when need to view all slot by car size', async () => {
+        const res = await request(app).get('/tickets/s');
+        expect(res.status).toBe(200);
+    });
+});
+
+describe('GET /getPlatesByCarSize', () => {
+    it('should return 200 when need to view all plat number by car size', async () => {
+        const res = await request(app).get('/tickets/s');
+        expect(res.status).toBe(200);
+    });
+});
