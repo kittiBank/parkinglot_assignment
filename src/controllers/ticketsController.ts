@@ -53,7 +53,7 @@ export const createTicket = async (req: Request, res: Response) => {
                 slot_id,
                 plate_number,
                 car_size_code: car_size,
-                message: 'Ticket created success',
+                message: `Ticket ${slot_id} created success`,
             });
 
         } catch (err) {
