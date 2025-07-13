@@ -9,18 +9,6 @@
     "build": "tsc",
     "test": "jest"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/kittiBank/parkinglot_assignment.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/kittiBank/parkinglot_assignment/issues"
-  },
-  "homepage": "https://github.com/kittiBank/parkinglot_assignment#readme",
   "dependencies": {
     "dotenv": "^17.2.0",
     "express": "^5.1.0",
